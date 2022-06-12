@@ -1,0 +1,33 @@
+- name: Pattern match to get peer group
+  set_fact:
+    peergroup: "{{host|regex_findall('neighbor \\b[a-zA-Z_a-zA-Z]\\w+\\b peer group')|length}}"
+    peergrouppwd: "{{host|regex_findall('neighbor \\b[a-zA-Z_a-zA-Z]\\w+\\b password 7 *')|length}}"
+    peergroupippwd: "{{host|regex_findall('neighbor \\b(?:[0-9]{1,3}\\.){3}[0-9]{1,3}\\b  password 7 *')|length}}"
+    peergroupip: "{{host|regex_findall('neighbor \\b(?:[0-9]{1,3}\\.){3}[0-9]{1,3}\\b peer group *')|length}}"
+- name: split by lines
+  set_fact: 
+    peergroupsplitlines: "{{(host|regex_findall('neighbor \\b[a-zA-Z_a-zA-Z]\\w+\\b peer group',multiline=true)|regex_replace('\\n', '.')).split('.') }}"
+  when: peergroup | int != 0
+- name: split by spaces and get peer group name
+  debug: 
+    msg: "{{(item|regex_findall('neighbor \\b[a-zA-Z_a-zA-Z]\\w+\\b peer group')|regex_replace(' ', ':')).split(':').1}}"
+  register: peergroupnames
+  when: peergroup | int != 0
+  with_items:
+    - "{{peergroupsplitlines.0.split(',')}}"
+- name: split by lines for pwd
+  set_fact: 
+    peergrouppwdsplitlines: "{{(host|regex_findall('neighbor \\b(?:[0-9]{1,3}\\.){3}[0-9]{1,3}\\b password 7 *',multiline=true)|regex_replace('\\n', '-')).split('-') }}"
+  when: peergroupippwd | int  != 0
+- name: print
+  debug:
+    msg: "{{peergrouppwdsplitlines}}"
+- name: split by spaces and get peer group name for pwd
+  debug: 
+    msg: "{{(item|regex_findall('neighbor \\b(?:[0-9]{1,3}\\.){3}[0-9]{1,3}\\b password 7 *')|regex_replace(' ', ':')).split(':').1}}"
+  register: peergrouppwdnames
+  when: peergroupippwd | int  != 0
+  with_items:
+    - "{{peergrouppwdsplitlines.0.split(',')}}"
+
+  
