@@ -1,0 +1,56 @@
+- name: Pattern match to get peer group
+  set_fact:
+    peergroup: "{{facts|regex_findall('neighbor \\b[a-zA-Z_-a-zA-Z]+\\b peer group')|length}}"
+    peergroupip: "{{facts|regex_findall('neighbor \\b(?:[0-9]{1,3}\\.){3}[0-9]{1,3}\\b peer group *')|length}}"
+################################### Get Peer Group names #################################
+- name: split by lines
+  set_fact: 
+    peergroupsplitlines: "{{(facts|regex_findall('neighbor \\b[a-zA-Z_-a-zA-Z]+\\b peer group',multiline=true)|regex_replace('\n', '.')).split('.') }}"
+  when: peergroup | int != 0
+- name: split by spaces and get peer group name
+  debug: 
+    msg: "{{(peergrouploop|regex_findall('neighbor \\b[a-zA-Z_-a-zA-Z]+\\b peer group')|regex_replace(' ', ':')).split(':').1}}"
+  register: peergroupnames
+  when: peergroup | int != 0
+  loop_control:
+    loop_var: peergrouploop
+  with_items:
+    - "{{peergroupsplitlines.0.split(',')}}"
+#############################################################################################
+- name: Get all the lines with password
+  debug:
+    msg: "{{facts|regex_findall('neighbor \\b[a-zA-Z-a-zA-Z]\\w+\\b password 7')|join(' ')}}"
+  register: temp
+- name: Check if password is set for PeerGroup
+  assert:
+    success_msg : "Baseline 2.0 Passed"
+    fail_msg : "Baseline 2.0 Failed"
+    that:
+      - "'neighbor {{peergroupname.msg}} password 7' in facts"
+    quiet: true
+  when: peergroup | int != 0
+  ignore_errors: yes
+  loop_control:
+    loop_var: peergroupname
+  register: baselinepeergroup
+  no_log: true
+  with_items:
+    - "{{peergroupnames.results}}"
+- set_fact:
+    baselinepeergroup: "{{baselinepeergroup.results}}"
+- set_fact:
+    failedpeergroup: "{{failedpeergroup|default([]) + [failedchk.peergroupname.msg]}}"
+    #failedpeergroup: "{{failedchk.peergroupname.msg}}"
+  when:  "failedchk.failed  == true"
+  with_items:
+    - "{{baselinepeergroup}}"
+  loop_control:
+    loop_var: failedchk
+  ignore_errors: yes
+- name: Result
+  debug: 
+    msg: "{{failedpeergroup}}" # this list has all the failed group
+- set_fact:
+    failedpeergroup: ""
+
+    
