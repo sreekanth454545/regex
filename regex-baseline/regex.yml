@@ -38,19 +38,19 @@
     - "{{peergroupnames.results}}"
 - set_fact:
     baselinepeergroup: "{{baselinepeergroup.results}}"
+  when: peergroup | int != 0
 - set_fact:
     failedpeergroup: "{{failedpeergroup|default([]) + [failedchk.peergroupname.msg]}}"
-    #failedpeergroup: "{{failedchk.peergroupname.msg}}"
   when:  "failedchk.failed  == true"
   with_items:
     - "{{baselinepeergroup}}"
   loop_control:
     loop_var: failedchk
   ignore_errors: yes
+  when: peergroup | int != 0
 - name: Result
   debug: 
     msg: "{{failedpeergroup}}" # this list has all the failed group
+  when: peergroup | int != 0
 - set_fact:
     failedpeergroup: ""
-
-    
