@@ -38,9 +38,11 @@
     - "{{peergroupnames.results}}"
 - set_fact:
     baselinepeergroup: "{{baselinepeergroup.results}}"
+- set_fact:
+    failedpeergroup: []
   when: peergroup | int != 0
 - set_fact:
-    failedpeergroup: "{{failedpeergroup|default([]) + [failedchk.peergroupname.msg]}}"
+    failedpeergroup: "{{failedpeergroup + [failedchk.peergroupname.msg]}}"
   when:  "failedchk.failed  == true"
   with_items:
     - "{{baselinepeergroup}}"
@@ -52,5 +54,28 @@
   debug: 
     msg: "{{failedpeergroup}}" # this list has all the failed group
   when: peergroup | int != 0
+########################################### Peer Group IP #######################################
+- set_fact:
+    peergrouppwdsplitlines: []
+- name: split by lines for pwd
+  set_fact: 
+    peergrouppwdsplitlines:  "{{ peergrouppwdsplitlines + (facts|regex_findall('neighbor \\b(?:[0-9]{1,3}\\.){3}[0-9]{1,3}\\b peer group '+ failedchk | string))}}"
+  when: peergroupip | int  != 0 and failedpeergroup | length != 0
+  loop_control:
+    loop_var: failedchk
+  with_items:
+    - "{{failedpeergroup}}"
+- name: split by spaces and get IP Range
+  debug: 
+    msg: "{{(factsloop|regex_replace(' ', ':')).split(':').1}}"
+  register: peergrouppwdnames
+  when: peergroupip | int  != 0 and failedpeergroup | length != 0
+  loop_control:
+    loop_var: factsloop
+  with_items:
+    - "{{peergrouppwdsplitlines}}"
+- debug: msg="{{peergrouppwdnames}}"
+###############################################################################
 - set_fact:
     failedpeergroup: ""
+  
