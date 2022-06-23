@@ -3,13 +3,12 @@
   gather_facts: no
   vars:
     inventory: 
-      - "neighbor EVPN_RR peer group neighbor EVPN-RR peer group neighbor EVPN_RR password 7 6ujdhkhdsfhsdkf neighbor EVPN-RR password 7 6ujdhkhdsfhsdkf neighbor 10.0.0.0 peer group SPINES neighbor 10.0.0.0 password 7 dsfgjkfdgjklfdg neighbor 10.1.0.0 peer group EVPN_RR neighbor 10.1.0.0 password 7 dsfgjkfsdfsfdg"
-      - "neighbor EVPN_RR peer group neighbor EVPN_RR password 7 6ujdhkhdsfhsdkf neighbor 10.0.0.0 peer group EVPN_RR neighbor 10.0.0.0 password 7 dsfgjkfdgjklfdg neighbor 10.1.0.0 peer group EVPN_RR neighbor 10.1.0.0 password 7 dsfgjkfsdfsfdg"
+      - "neighbor EVPN2 peer group neighbor RR12 peer group neighbor EVPN_RR12 peer group neighbor EVPN123_12 peer group neighbor EVPN_RR peer group neighbor EVPN-RR peer group neighbor EVPN_RR password 7 6ujdhkhdsfhsdkf neighbor EVPN-RR password 7 6ujdhkhdsfhsdkf neighbor 10.0.0.0 peer group SPINES neighbor 10.0.0.0 password 7 dsfgjkfdgjklfdg neighbor 10.1.0.0 peer group EVPN_RR neighbor 10.1.0.0 password 7 dsfgjkfsdfsfdg"
+      - "neighbor evpn12 peer group neighbor EVPN2 peer group neighbor EVPN_RR peer group neighbor EVPN_RR password 7 6ujdhkhdsfhsdkf neighbor 10.0.0.0 peer group EVPN_RR neighbor 10.0.0.0 password 7 dsfgjkfdgjklfdg neighbor 10.1.0.0 peer group EVPN_RR neighbor 10.1.0.0 password 7 dsfgjkfsdfsfdg"
   tasks:
      - include: regex.yml
        vars:
         facts: "{{ item }}"
-        
        with_items:
        - "{{inventory}}"
       
