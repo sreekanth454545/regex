@@ -43,7 +43,7 @@
   when: peergroup | int != 0
 - set_fact:
     failedpeergroup: "{{failedpeergroup + [failedchk.peergroupname.msg]}}"
-  when:  "failedchk.failed  == true"
+  when:  failedchk.failed | string  == true
   with_items:
     - "{{baselinepeergroup}}"
   loop_control:
