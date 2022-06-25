@@ -17,17 +17,12 @@
   with_items:
     - "{{peergroupsplitlines.0.split(',')}}"
 #############################################################################################
-- name: Get all the lines with password
-  debug:
-    msg: "{{facts|regex_findall('neighbor \\b[a-zA-Z|A-Za-z0-9_-a-zA-Z0-9|A-Za-z0-9]\\w+\\b password 7')|join(' ')}}"
-  register: temp
 - name: Check if password is set for PeerGroup
   assert:
-    success_msg : "Baseline 2.0 Passed"
-    fail_msg : "Baseline 2.0 Failed"
+    success_msg : "passed"
+    fail_msg : "failed"
     that:
       - "'neighbor {{peergroupname.msg}} password 7' in facts"
-    quiet: true
   when: peergroup | int != 0
   ignore_errors: yes
   loop_control:
@@ -37,20 +32,25 @@
   with_items:
     - "{{peergroupnames.results}}"
 - set_fact:
-    baselinepeergroup: "{{baselinepeergroup.results}}"
-- set_fact:
     failedpeergroup: []
+  no_log: yes
   when: peergroup | int != 0
-- set_fact:
-    failedpeergroup: "{{failedpeergroup + [failedchk.peergroupname.msg]}}"
-  when:  failedchk.failed | string  == true
+- debug: 
+    msg: "{{item}}"  
+  with_items: "{{baselinepeergroup.results}}" 
+  when: item.failed == true 
+  register: tempdump
+  no_log: yes
+- set_fact: 
+    failedpeergroup: "{{failedpeergroup + [failedchk.item.peergroupname.msg]}}"
+  when: failedchk.skipped is not defined and peergroup | int != 0
   with_items:
-    - "{{baselinepeergroup}}"
+    - "{{tempdump.results}}"
   loop_control:
     loop_var: failedchk
-  ignore_errors: yes
-  when: peergroup | int != 0
-- name: Result
+  #ignore_errors: yes
+  #no_log: yes
+- name: Failed PeerGroup list
   debug: 
     msg: "{{failedpeergroup}}" # this list has all the failed group
   when: peergroup | int != 0
