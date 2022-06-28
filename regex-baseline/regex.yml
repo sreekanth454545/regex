@@ -65,6 +65,7 @@
   loop_control:
     loop_var: peergroupname
   no_log: yes
+  ignore_errors: yes
   with_items:
     - "{{peergroupnames.results}}"
 - name: split by spaces and get IP Range
@@ -72,6 +73,7 @@
     msg: "{{(factsloop|regex_replace(' ', ':')).split(':').1}}"
   when: peergroupip | int  != 0 and successlist | length != 0
   register: peergroupipstemp
+  ignore_errors: yes
   loop_control:
     loop_var: factsloop
   no_log: yes
@@ -81,6 +83,7 @@
     peergroupips: "{{peergroupips + [temp.msg]}}"
   loop_control:
     loop_var: temp
+  ignore_errors: yes
   with_items:
     - "{{peergroupipstemp.results}}"
 ###############################################################################
