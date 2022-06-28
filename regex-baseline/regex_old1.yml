@@ -32,7 +32,7 @@
   with_items:
     - "{{peergroupnames.results}}"
 - set_fact:
-    successlist: []
+    failedpeergroup: []
   no_log: yes
   when: peergroup | int != 0
 - debug: 
@@ -41,55 +41,41 @@
   when: item.failed == true 
   register: tempdump
   no_log: yes
-  ignore_errors: yes
 - set_fact: 
-    successlist: "{{successlist + [failedchk.item.peergroupname.msg]}}"
-  when: failedchk.skipped is defined and peergroup | int != 0
+    failedpeergroup: "{{failedpeergroup + [failedchk.item.peergroupname.msg]}}"
+  when: failedchk.skipped is not defined and peergroup | int != 0
   with_items:
     - "{{tempdump.results}}"
   loop_control:
     loop_var: failedchk
-  ignore_errors: yes
-  no_log: yes
+  #ignore_errors: yes
+  #no_log: yes
+- name: Failed PeerGroup list
+  debug: 
+    msg: "{{failedpeergroup}}" # this list has all the failed group
+  when: peergroup | int != 0
 ########################################### Peer Group IP #######################################
-- name: Get neighbor ip address line
-  set_fact: 
-    peergrppwd: "{{(facts|regex_findall('neighbor \\b(?:[0-9]{1,3}\\.){3}[0-9]{1,3}\\b .*',multiline=true)|regex_replace('\n', '.'))}}"
 - set_fact:
     peergrouppwdsplitlines: []
-    peergroupips: []
-- name: get the ip line
+- name: split by lines for pwd
   set_fact: 
-    peergrouppwdsplitlines:  "{{ peergrouppwdsplitlines + (facts|regex_findall('neighbor \\b(?:[0-9]{1,3}\\.){3}[0-9]{1,3}\\b peer group '+ peergroupname.msg | string))}}"
-  when: peergroupip | int  != 0 and peergroupname | length != 0
+    peergrouppwdsplitlines:  "{{ peergrouppwdsplitlines + (facts|regex_findall('neighbor \\b(?:[0-9]{1,3}\\.){3}[0-9]{1,3}\\b peer group '+ failedchk | string))}}"
+  when: peergroupip | int  != 0 and failedpeergroup | length != 0
   loop_control:
-    loop_var: peergroupname
-  no_log: yes
+    loop_var: failedchk
   with_items:
-    - "{{peergroupnames.results}}"
+    - "{{failedpeergroup}}"
 - name: split by spaces and get IP Range
   debug: 
     msg: "{{(factsloop|regex_replace(' ', ':')).split(':').1}}"
-  when: peergroupip | int  != 0 and successlist | length != 0
-  register: peergroupipstemp
+  register: peergrouppwdnames
+  when: peergroupip | int  != 0 and failedpeergroup | length != 0
   loop_control:
     loop_var: factsloop
-  no_log: yes
   with_items:
     - "{{peergrouppwdsplitlines}}"
-- set_fact: 
-    peergroupips: "{{peergroupips + [temp.msg]}}"
-  loop_control:
-    loop_var: temp
-  with_items:
-    - "{{peergroupipstemp.results}}"
+- debug: msg="{{peergrouppwdnames}}"
 ###############################################################################
-- name: assert
-  assert:
-    that: "('neighbor {{item.1}} peer group {{item.0.msg}}' in facts) or (('neighbor {{item.1}} password 7' in facts) or ('neighbor {{item.1}} description' in facts))"
-  with_nested:
-    - "{{peergroupnames.results}}"
-    - "{{peergroupips}}"
 - set_fact:
-    successlist: ""
-    peergroupips: ""
+    failedpeergroup: ""
+  
