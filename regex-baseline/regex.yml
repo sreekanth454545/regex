@@ -71,7 +71,7 @@
 - name: split by spaces and get IP Range
   debug: 
     msg: "{{(factsloop|regex_replace(' ', ':')).split(':').1}}"
-  when: peergroupip | int  != 0 and successlist | length != 0
+  #when: peergroupip | int  != 0 and successlist | length != 0
   register: peergroupipstemp
   ignore_errors: yes
   loop_control:
@@ -86,13 +86,27 @@
   ignore_errors: yes
   with_items:
     - "{{peergroupipstemp.results}}"
+- debug: msg="{{peergroupips}}"
 ###############################################################################
 - name: assert
   assert:
     that: "('neighbor {{item.1}} peer group {{item.0.msg}}' in facts) or (('neighbor {{item.1}} password 7' in facts) or ('neighbor {{item.1}} description' in facts))"
+    success_msg: "passedbaseline"
+    fail_msg: "failedbaseline"
   with_nested:
     - "{{peergroupnames.results}}"
     - "{{peergroupips}}"
+  register: results
+  ignore_errors: yes
+
+- set_fact: 
+    errorcount="{{results| string |regex_findall('failedbaseline')|length}}"
+- name: result
+  assert:
+    that:
+      - "errorcount == 0"
+    success_msg: "passed"
+    fail_msg: "failed"
 - set_fact:
     successlist: ""
     peergroupips: ""
