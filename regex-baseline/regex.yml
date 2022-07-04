@@ -52,61 +52,18 @@
   ignore_errors: yes
   no_log: yes
 ########################################### Peer Group IP #######################################
-- name: Get neighbor ip address line
-  set_fact: 
-    peergrppwd: "{{(facts|regex_findall('neighbor \\b(?:[0-9]{1,3}\\.){3}[0-9]{1,3}\\b .*',multiline=true)|regex_replace('\n', '.'))}}"
-- set_fact:
-    peergrouppwdsplitlines: []
-    peergroupips: []
-- name: get the ip line
-  set_fact: 
-    peergrouppwdsplitlines:  "{{ peergrouppwdsplitlines + (facts|regex_findall('neighbor \\b(?:[0-9]{1,3}\\.){3}[0-9]{1,3}\\b peer group '+ peergroupname.msg | string))}}"
-  when: peergroupip | int  != 0 and peergroupname | length != 0
+- name: call peer group 
+  include: bgp.yml
+  vars:
+    peergroup_name: "{{peergroupname.msg}}"
+  ignore_errors: yes
   loop_control:
     loop_var: peergroupname
-  no_log: yes
-  ignore_errors: yes
   with_items:
     - "{{peergroupnames.results}}"
-- name: split by spaces and get IP Range
-  debug: 
-    msg: "{{(factsloop|regex_replace(' ', ':')).split(':').1}}"
-  #when: peergroupip | int  != 0 and successlist | length != 0
-  register: peergroupipstemp
-  ignore_errors: yes
-  loop_control:
-    loop_var: factsloop
-  no_log: yes
-  with_items:
-    - "{{peergrouppwdsplitlines}}"
-- set_fact: 
-    peergroupips: "{{peergroupips + [temp.msg]}}"
-  loop_control:
-    loop_var: temp
-  ignore_errors: yes
-  with_items:
-    - "{{peergroupipstemp.results}}"
-- debug: msg="{{peergroupips}}"
-###############################################################################
-- name: assert
-  assert:
-    that: "('neighbor {{item.1}} peer group {{item.0.msg}}' in facts) or (('neighbor {{item.1}} password 7' in facts) or ('neighbor {{item.1}} description' in facts))"
-    success_msg: "passedbaseline"
-    fail_msg: "failedbaseline"
-  with_nested:
-    - "{{peergroupnames.results}}"
-    - "{{peergroupips}}"
-  register: results
-  ignore_errors: yes
-
-- set_fact: 
-    errorcount="{{results| string |regex_findall('failedbaseline')|length}}"
-- name: result
-  assert:
-    that:
-      - "errorcount == 0"
-    success_msg: "passed"
-    fail_msg: "failed"
-- set_fact:
-    successlist: ""
-    peergroupips: ""
+####################### Result ########################################
+- assert:
+    that: 
+      - "failedlist|length == 0"
+    fail_msg: "Baseline failed"
+    success_msg: "Baseline Success"
