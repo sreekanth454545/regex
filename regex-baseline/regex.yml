@@ -52,16 +52,6 @@
   ignore_errors: yes
   no_log: yes
 ########################################### Peer Group IP #######################################
-- name: call peer group 
-  include: bgp.yml
-  vars:
-    peergroup_name: "{{peergroupname.msg}}"
-  ignore_errors: yes
-  loop_control:
-    loop_var: peergroupname
-  with_items:
-    - "{{peergroupnames.results}}"
-####################### Result ########################################
 - assert:
     that: 
       - "failedlist|length == 0"
