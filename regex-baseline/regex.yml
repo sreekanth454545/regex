@@ -31,29 +31,9 @@
   no_log: true
   with_items:
     - "{{peergroupnames.results}}"
-- set_fact:
-    successlist: []
-  no_log: yes
-  when: peergroup | int != 0
-- debug: 
-    msg: "{{item}}"  
-  with_items: "{{baselinepeergroup.results}}" 
-  when: item.failed == true 
-  register: tempdump
-  no_log: yes
-  ignore_errors: yes
-- set_fact: 
-    successlist: "{{successlist + [failedchk.item.peergroupname.msg]}}"
-  when: failedchk.skipped is defined and peergroup | int != 0
-  with_items:
-    - "{{tempdump.results}}"
-  loop_control:
-    loop_var: failedchk
-  ignore_errors: yes
-  no_log: yes
 ########################################### Peer Group IP #######################################
 - assert:
     that: 
-      - "failedlist|length == 0"
+      - "baselinepeergroup.failed == true"
     fail_msg: "Baseline failed"
     success_msg: "Baseline Success"
