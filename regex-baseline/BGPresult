@@ -1,0 +1,3 @@
+{'msg': 'abc Baseline failed', 'failed': True, 'changed': False, 'evaluated_to': False, 'assertion': 'baselinepeergroup.failed == false'}
+{'msg': 'def Baseline failed', 'failed': True, 'changed': False, 'evaluated_to': False, 'assertion': 'baselinepeergroup.failed == false'}
+{'msg': 'ghi Baseline failed', 'failed': True, 'changed': False, 'evaluated_to': False, 'assertion': 'baselinepeergroup.failed == false'}

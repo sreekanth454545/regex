@@ -4,12 +4,37 @@
   vars:
     inventory: 
       - "neighbor EVPN2 peer group neighbor RR12 peer group neighbor EVPN_RR12 peer group neighbor EVPN123_12 peer group neighbor EVPN_RR peer group neighbor EVPN-RR peer group neighbor EVPN_RR password 7 6ujdhkhdsfhsdkf neighbor EVPN2 password 7 6ujdhkhdsfhsdkf neighbor 10.0.0.0 peer group SPINES neighbor 10.0.0.0 password 7 dsfgjkfdgjklfdg neighbor 10.1.0.0 peer group EVPN_RR neighbor 10.1.0.0 password 7 dsfgjkfsdfsfdg"
-     # - "neighbor evpn12 peer group neighbor EVPN2 peer group neighbor EVPN_RR peer group neighbor EVPN_RR password 7 6ujdhkhdsfhsdkf neighbor 10.0.0.0 peer group EVPN_RR neighbor 10.0.0.0 password 7 dsfgjkfdgjklfdg neighbor 10.1.0.0 peer group EVPN_RR neighbor 10.1.0.0 password 7 dsfgjkfsdfsfdg"
+      - "neighbor evpn12 peer group neighbor EVPN2 peer group neighbor EVPN_RR peer group neighbor EVPN_RR password 7 6ujdhkhdsfhsdkf neighbor 10.0.0.0 peer group EVPN_RR neighbor 10.0.0.0 password 7 dsfgjkfdgjklfdg neighbor 10.1.0.0 peer group EVPN_RR neighbor 10.1.0.0 password 7 dsfgjkfsdfsfdg"
+      - "neighbor evpn12 peer group neighbor EVPN2 peer group neighbor EVPN_RR peer group neighbor EVPN_RR password 7 6ujdhkhdsfhsdkf neighbor 10.0.0.0 peer group EVPN_RR neighbor 10.0.0.0 password 7 dsfgjkfdgjklfdg neighbor 10.1.0.0 peer group EVPN_RR neighbor 10.1.0.0 password 7 dsfgjkfsdfsfdg"
+    hostname:
+      - "abc"
+      - "def"
+      - "ghi"
   tasks:
-     - include: regex.yml
-       vars:
-        facts: "{{ item }}"
-       with_items:
-       - "{{inventory}}"
+    - name: "Include task"
+      include: regex.yml
+      vars:
+        facts: "{{ item.0 }}"
+        host_name: "{{ item.1 }}"
+      with_together:
+        - "{{inventory}}"
+        - "{{hostname}}"
+    - set_fact: 
+        content="{{ lookup('file','./BGPresult') }}"
+    - name: dump to variable 
+      debug: 
+        msg: "{{item}}"
+      with_items:
+        - "{{content.split('\n')}}"
+      no_log: yes
+      register: bgpresults
+    - debug: msg="{{bgpresults}}"
+    - name:  delete the bgp results
+      file:
+        path: "./BGPresult"
+        state: absent
+      ignore_errors: yes
+      
+      
       
 ...

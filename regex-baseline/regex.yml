@@ -2,6 +2,7 @@
   set_fact:
     peergroup: "{{facts|regex_findall('neighbor \\b[a-zA-Z|A-Za-z0-9_-a-zA-Z0-9|A-Za-z0-9]+\\b peer group')|length}}"
     peergroupip: "{{facts|regex_findall('neighbor \\b(?:[0-9]{1,3}\\.){3}[0-9]{1,3}\\b peer group *')|length}}"
+
 ################################### Get Peer Group names #################################
 - name: split by lines
   set_fact: 
@@ -34,6 +35,16 @@
 ########################################### Peer Group IP #######################################
 - assert:
     that: 
-      - "baselinepeergroup.failed == true"
-    fail_msg: "Baseline failed"
-    success_msg: "Baseline Success"
+      - "baselinepeergroup.failed == false"
+    fail_msg: "{{host_name}} Baseline failed"
+    success_msg: "{{host_name}} Baseline Success"
+  ignore_errors: yes
+  register: results
+- name: Result
+  lineinfile:
+    dest: ./BGPresult
+    line: "{{ results }}"
+    create: yes
+  delegate_to: localhost
+
+
