@@ -28,7 +28,7 @@
         - "{{content.split('\n')}}"
       no_log: yes
       register: bgpresults
-    - debug: msg="{{bgpresults}}"
+    - debug: msg="{{bgpresults.results.msg}}"
     - name:  delete the bgp results
       file:
         path: "./BGPresult"
