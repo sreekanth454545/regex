@@ -1,0 +1,24 @@
+---
+- hosts: all
+  gather_facts: no
+  vars:
+    ips:
+      - 192.168.0.1
+      - 192.168.0.2
+    ansiblegroup: "[server]"
+  tasks:
+    - name: "Add inventory to in memory"
+      local_action:
+        module: lineinfile
+        path: /etc/ansible/hosts
+        insertafter: "{{ansiblegroup}}"
+        line: "{{item}}"
+      with_items: "{{ips}}"
+    - name: "flush new inventory"
+      meta: refresh_inventory
+    - pause:
+        minutes: 1
+    - name: 
+      debug:
+        msg: "{{inventory_hostname}}"
+...
