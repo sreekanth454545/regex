@@ -1,0 +1,81 @@
+- name: Pattern match to get peer group
+  set_fact:
+    peergroup: "{{facts|regex_findall('neighbor \\b[a-zA-Z|A-Za-z0-9_-a-zA-Z0-9|A-Za-z0-9]+\\b peer group')|length}}"
+    peergroupip: "{{facts|regex_findall('neighbor \\b(?:[0-9]{1,3}\\.){3}[0-9]{1,3}\\b peer group *')|length}}"
+################################### Get Peer Group names #################################
+- name: split by lines
+  set_fact: 
+    peergroupsplitlines: "{{(facts|regex_findall('neighbor \\b[a-zA-Z|A-Za-z0-9_-a-zA-Z0-9|A-Za-z0-9]+\\b peer group',multiline=true)|regex_replace('\n', '.')).split('.') }}"
+  when: peergroup | int != 0
+- name: split by spaces and get peer group name
+  debug: 
+    msg: "{{(peergrouploop|regex_findall('neighbor \\b[a-zA-Z|A-Za-z0-9_-a-zA-Z0-9|A-Za-z0-9]+\\b peer group')|regex_replace(' ', ':')).split(':').1}}"
+  register: peergroupnames
+  when: peergroup | int != 0
+  loop_control:
+    loop_var: peergrouploop
+  with_items:
+    - "{{peergroupsplitlines.0.split(',')}}"
+#############################################################################################
+- name: Check if password is set for PeerGroup
+  assert:
+    success_msg : "passed"
+    fail_msg : "failed"
+    that:
+      - "'neighbor {{peergroupname.msg}} password 7' in facts"
+  when: peergroup | int != 0
+  ignore_errors: yes
+  loop_control:
+    loop_var: peergroupname
+  register: baselinepeergroup
+  no_log: true
+  with_items:
+    - "{{peergroupnames.results}}"
+- set_fact:
+    failedpeergroup: []
+  no_log: yes
+  when: peergroup | int != 0
+- debug: 
+    msg: "{{item}}"  
+  with_items: "{{baselinepeergroup.results}}" 
+  when: item.failed == true 
+  register: tempdump
+  no_log: yes
+- set_fact: 
+    failedpeergroup: "{{failedpeergroup + [failedchk.item.peergroupname.msg]}}"
+  when: failedchk.skipped is not defined and peergroup | int != 0
+  with_items:
+    - "{{tempdump.results}}"
+  loop_control:
+    loop_var: failedchk
+  #ignore_errors: yes
+  #no_log: yes
+- name: Failed PeerGroup list
+  debug: 
+    msg: "{{failedpeergroup}}" # this list has all the failed group
+  when: peergroup | int != 0
+########################################### Peer Group IP #######################################
+- set_fact:
+    peergrouppwdsplitlines: []
+- name: split by lines for pwd
+  set_fact: 
+    peergrouppwdsplitlines:  "{{ peergrouppwdsplitlines + (facts|regex_findall('neighbor \\b(?:[0-9]{1,3}\\.){3}[0-9]{1,3}\\b peer group '+ failedchk | string))}}"
+  when: peergroupip | int  != 0 and failedpeergroup | length != 0
+  loop_control:
+    loop_var: failedchk
+  with_items:
+    - "{{failedpeergroup}}"
+- name: split by spaces and get IP Range
+  debug: 
+    msg: "{{(factsloop|regex_replace(' ', ':')).split(':').1}}"
+  register: peergrouppwdnames
+  when: peergroupip | int  != 0 and failedpeergroup | length != 0
+  loop_control:
+    loop_var: factsloop
+  with_items:
+    - "{{peergrouppwdsplitlines}}"
+- debug: msg="{{peergrouppwdnames}}"
+###############################################################################
+- set_fact:
+    failedpeergroup: ""
+  

@@ -1,0 +1,10 @@
+---
+- hosts: server
+  gather_facts: no
+  tasks:
+    - debug: msg="hello Checking"
+    - set_fact:
+        test: "{{ 100 | random }}"
+    - name: Trigerring include
+      include_tasks: inven.yml
+...

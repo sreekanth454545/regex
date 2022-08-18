@@ -1,0 +1,5 @@
+- name: task
+  debug:
+    msg: "IPs: {{item}}--Test Value: {{test}}"
+  with_items:
+    - "{{inventory_hostname}}"

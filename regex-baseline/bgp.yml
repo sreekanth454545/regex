@@ -1,0 +1,13 @@
+- set_fact:
+    failedlist: []
+- name: get the ip line
+  set_fact: 
+    peergrpip:  "{{(facts|regex_findall('neighbor \\b(?:[0-9]{1,3}\\.){3}[0-9]{1,3}\\b peer group '+ peergroup_name | string))|length}}"
+    peergrppwd: "{{(facts|regex_findall('neighbor {{peergroup_name}} password 7 .*'))|length}}"
+  when: peergroupip | int  != 0 and peergroup_name | length != 0
+  no_log: yes
+  ignore_errors: yes
+- name: Check
+  set_fact:
+    failedlist: "{{failedlist + [peergroup_name]}}"
+  when: peergrpip|int != peergrppwd |int
