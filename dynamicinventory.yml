@@ -4,27 +4,27 @@
   vars:
     DBname: "Ansible"
     DBUsername: "root"
-    DBPassword: "Pass!2211"
+    DBPassword: ""
     DBHost: "172.18.0.3"
     ansiblegroup: "[server]"
   tasks:
     - name: Get the hostname from MySQL
-      community.mysql.mysql_query:
+      local_action:
+        module: community.mysql.mysql_query
         login_db: "{{DBname}}"
         query: SELECT (Hostname) FROM Ansible.F5Details;
         login_host: "{{DBHost}}"
         login_password: "{{DBPassword}}"
         login_user: "{{DBUsername}}"
       register: queryresults
-      delegate_to: localhost
       run_once: true
     - name: "Add inventory to in memory"
       local_action:
         module: lineinfile
         path: "{{ansible_inventory_sources[0]}}"
         insertafter: "{{ansiblegroup}}"
-        line: "{{item}}"
-      with_items: "{{ips}}"
+        line: "{{item.Hostname}}"
+      with_items: "{{queryresults.query_result}}"
     - name: "flush new inventory"
       meta: refresh_inventory
     - pause:
