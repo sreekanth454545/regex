@@ -2,11 +2,22 @@
 - hosts: all
   gather_facts: no
   vars:
-    ips:
-      - 192.168.0.1
-      - 192.168.0.2
+    DBname: "Ansible"
+    DBUsername: "root"
+    DBPassword: "Pass!2211"
+    DBHost: "172.18.0.3"
     ansiblegroup: "[server]"
   tasks:
+    - name: Get the hostname from MySQL
+      community.mysql.mysql_query:
+        login_db: "{{DBname}}"
+        query: SELECT (Hostname) FROM Ansible.F5Details;
+        login_host: "{{DBHost}}"
+        login_password: "{{DBPassword}}"
+        login_user: "{{DBUsername}}"
+      register: queryresults
+      delegate_to: localhost
+      run_once: true
     - name: "Add inventory to in memory"
       local_action:
         module: lineinfile
