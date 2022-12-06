@@ -1,0 +1,49 @@
+---
+- hosts: localhost
+  connection: local
+  vars:
+    output01: "passive-interface default
+              no passive-interface Port-Channel4
+              no passive-interface vlan104
+              distribute-list prefix-list OSPF_MAINFRAME_IN in"
+    output02: "ip ospf authentication message-digest
+    ip ospf message-digest-key 123 md5 7 Ws7CB1243341234"
+    ospflinecount: 0
+  tasks:
+    - name: Check if there is no-passive-interface in the output
+      assert:
+        that:
+          - "'no passive-interface' in output01"
+        fail_msg: "Failed"
+        success_msg: "Passed"
+      register: assert01
+      no_log: true
+      ignore_errors: yes
+    - name: Get the no interface lines 
+      set_fact:
+        nopassivelines: "{{ (output01|regex_findall('no passive-interface \\b[a-zA-Z0-9-_]+\\b'))}}"
+      no_log: true
+      when: assert01.msg == 'Passed'
+    - name: Get the interface name
+      set_fact: 
+        nopassivegrplines: "{{ (item|regex_replace(' ', ':')).split(':')|last}}"
+      no_log: true
+      with_items: "{{nopassivelines}}"
+      when: assert01.msg == 'Passed'
+      register: nopassivegrplinesop
+    - name: No Passive group name
+      set_fact: 
+        groupnames: "{{nopassivegrplinesop.results | json_query('[*].ansible_facts.nopassivegrplines')}}"
+      when: assert01.msg == 'Passed'
+    - name: Check for the ospf lines in the output
+      set_fact:
+        ospflinecount: "{{ ospflinecount|int + output02| regex_findall('ip ospf authentication message-digest ip ospf message-digest-key 123 md5 7 .*')|length|int}}"
+        groupnamescount: "{{groupnames|length|int}}"
+      with_items: "{{groupnames}}"
+    - name: Final Assert Statement
+      assert:
+        that:
+         - "((ospflinecount == groupnamescount) or ('Failed' in assert01.msg))"
+        fail_msg: "Baseline Check Un-Sucessfull"
+        success_msg: "Baseline Check Sucessfull"
+...
