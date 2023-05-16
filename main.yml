@@ -1,16 +1,6 @@
----
-- hosts: localhost
-  gather_facts: no
-  vars:
-    inventory: 
-      - "neighbor EVPN_RR peer group neighbor eccN_RR peer group neighbor EVPN_RR password 7 6ujdhkhdsfhsdkf neighbor 10.0.0.0 peer group SPINES neighbor 10.0.0.0 password 7 dsfgjkfdgjklfdg neighbor 10.1.0.0 peer group SPINES1 neighbor 10.1.0.0 password 7 dsfgjkfsdfsfdg"
-      - "neighbor EVPN_RR peer group neighbor EVPN_RR password 7 6ujdhkhdsfhsdkf neighbor 10.0.0.0 peer group SPINES neighbor 10.0.0.0 password 7 dsfgjkfdgjklfdg neighbor 10.1.0.0 peer group SPINES1 neighbor 10.1.0.0 password 7 dsfgjkfsdfsfdg"
-    pattern: "/[a-zA-Z_a-zA-z]+/g"
-  tasks:
-     - include: regex.yml
-       vars:
-        host: "{{ item }}"
-       with_items:
-       - "{{inventory}}"
-      
-...
+SELECT *
+FROM (
+     SELECT *, ROW_NUMBER() OVER (ORDER BY OrderID) AS RowNum
+     FROM [Order Details]
+     ) AS MyDerivedTable
+WHERE MyDerivedTable.RowNum BETWEEN 100 AND 200
