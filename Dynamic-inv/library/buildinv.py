@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 from ansible.module_utils.basic import *
+import itertools
 
 
 def chunk_list(my_list, chunk_size):
@@ -23,7 +24,8 @@ def main():
 
     module = AnsibleModule(argument_spec=fields)
     try:
-        f_list=chunk_list(module.params['sql_results'],module.params['chunk_len'])
+        sql_results=list(itertools.chain.from_iterable(module.params['sql_results']))
+        f_list=chunk_list(,module.params['chunk_len'])
         if len(f_list) >= 0 :
             for i in range(0,len(f_list)):
                 content=content+'''['''+str(module.params['device_grp'])+str(i+1)+''']\n'''
