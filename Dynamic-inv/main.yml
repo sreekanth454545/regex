@@ -1,0 +1,25 @@
+---
+- hosts: localhost
+  vars:
+    host_details:
+      - 192.168.0.1
+      - 192.168.0.2
+      - 192.168.0.3
+      - 192.168.0.4
+      - 192.168.0.5
+      - 192.168.0.6
+      - 192.168.0.7
+      - 192.168.0.8
+      - 192.168.0.9
+      - 192.168.0.10
+  tasks:
+    - name: Check
+      buildinv:
+        sql_results: "{{ host_details }}"
+        chunk_len: 3
+        device_grp: "dfw"
+      register: results
+    - name: Create File
+      copy:
+        dest: "inventory.ini"
+        content: "{{ results.result }}"
