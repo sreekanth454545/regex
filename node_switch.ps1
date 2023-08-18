@@ -1,7 +1,6 @@
 param (
     [Parameter(Mandatory=$true)][string]$version=$(Read-Host "Enter the NVM Version")
 )
-$flag=0
 $node_len=0
 $nodejsdir="C:\Users\yathi\AppData\Roaming\nvm"
 Write-Host "Selected Version=$version" -ForegroundColor Yellow
