@@ -12,5 +12,18 @@
         host: "{{ item }}"
        with_items:
        - "{{inventory}}"
+
+        - name: SCP_Copy
+      main:
+        dmf_hostname: localhost
+        backup_hostname: localhost
+        dmf_username: root
+        dmf_password: "Pass!2211"
+        backup_username: root
+        backup_password: "Pass!2211"
+        dmf_backup_filepath: "/root/anaconda-ks.cfg"
+        backup_dest_filepath: "/var/test"
+      no_log: yes
+      register: results
       
 ...
