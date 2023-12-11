@@ -1,0 +1,2 @@
+https://<Controller IP>:8443/api/v1/data/
+controller/snapshot/available[name="testsnap"]'
