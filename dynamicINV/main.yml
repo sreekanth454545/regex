@@ -1,0 +1,45 @@
+- hosts: localhost
+  vars:
+    mssql_login_user: "sa"
+    mssql_login_password: "Pass!2211"
+    mssql_host: "192.168.1.137"
+    mssql_port: 1433
+    mssql_dbname: "cvp"
+  tasks:
+    - name: Get SQL Statement 
+      community.general.mssql_script:
+        login_user: "{{ mssql_login_user }}"
+        login_password: "{{ mssql_login_password }}"
+        login_host: "{{ mssql_host }}"
+        login_port: "{{ mssql_port }}"
+        db: "{{ mssql_dbname }}"
+        script: "select (cvp_name) from cvp_inv group by cvp_name;"
+      register: sqlresult 
+    - name: Get the DeviceGroup
+      set_fact:
+        DEVICE_GRP: "{{ DEVICE_GRP | default([]) + [ ((item | split('.') | first)[-3:])+'-'+item] }}" 
+      with_items: "{{ sqlresult.query_results.0.0 }}"
+    - name: Get SQL Statement 
+      community.general.mssql_script:
+        login_user: "{{ mssql_login_user }}"
+        login_password: "{{ mssql_login_password }}"
+        login_host: "{{ mssql_host }}"
+        login_port: "{{ mssql_port }}"
+        db: "{{ mssql_dbname }}"
+        script: "select [fqdn] from cvp_inv where cvp_name = '{{ item | split('-') | last }}';"
+      register: sqlresult
+      with_items: "{{ DEVICE_GRP }}"
+    - name: Generate Dynamic Inventory 
+      dynamic_inv:
+        payload: "{{sqlresult | to_json }}"
+        chunk_len: 3
+        gitlab_project_id: "48425181"
+        access_token: "glpat-vxYLnGotYT_9Rr3ShD6L"
+        gitlab_url: "https://gitlab.com/"
+      register: result
+    - name: Write Inventory to file
+      ansible.builtin.lineinfile:
+        path: inventory.ini
+        line: "{{ result.msg }}"
+        state: present
+        create: true
