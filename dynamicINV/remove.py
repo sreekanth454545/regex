@@ -8,7 +8,11 @@ def merge_dicts(dicts):
         for k, v in d.items():
             result[k].append(v)
     for v in dict(result):
-        temp_list.append(v+"-"+",".join(result[v]))
+        if len(result[v]) > 1:
+            t = "('"+"','".join(result[v])+"')"
+        else:
+            t = "('"+"".join(result[v])+"')"
+        temp_list.append(v+"-"+str(t))
     return temp_list
 
 def processing(params):
@@ -24,7 +28,7 @@ def processing(params):
 
 
 def remove_duplicate_grp():
-    module_args = dict(payload=dict(type='dict', required=True),chunk_len=dict(type='int',required=True,Default='10'),gitlab_url=dict(type='str',required=True),access_token=dict(type='str',required=True),gitlab_project_id=dict(type='int',required=True))
+    module_args = dict(payload=dict(type='list', required=True))
     result = dict(changed=False,msg='')
     module = AnsibleModule(argument_spec=module_args,supports_check_mode=False)
     status_code,status_msg=processing(module.params)
