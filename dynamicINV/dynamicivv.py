@@ -3,6 +3,7 @@ from ansible.module_utils.basic import AnsibleModule
 import traceback
 import sys
 import itertools
+import numpy as np
 
 def chunk_list(my_list, chunk_size):
     f_list=[]
@@ -13,40 +14,52 @@ def chunk_list(my_list, chunk_size):
 
 
 def check_gitlab_schedule(current_device_grp,params):
+    # Cron Schedule Config
+    days=[2] # Schedules every day on tuesday and wednesday (picked randomly)
+    hours=np.arange(1,5) # Schedule betsween 2am to 6 am (picked randomly)
     existing_device_grp=[]
     cur_pipeline_details=[]
     try:
         gl = gitlab.Gitlab(url=params['gitlab_url'], private_token=params['access_token'])
         gl.auth()
         project = gl.projects.get(params['gitlab_project_id'])
-        for schedule in project.pipelineschedules.list():
-            sch_details = project.pipelineschedules.get(schedule.id)
-            if sch_details.attributes['active'] == True:
-                varaibles=sch_details.attributes['variables']
-                for variable in varaibles:
-                    if variable['key'] == 'device_grp':
-                        existing_device_grp.append(variable['value'])
-                        cur_pipeline_details.append(dict(pipeline_id=schedule.id,device_grp=variable['value']))
-        delete_schedules=set(existing_device_grp)-set(current_device_grp)
-        for delete in delete_schedules:
-            for details in cur_pipeline_details:
-                if delete in details['device_grp']:
-                    sched = project.pipelineschedules.get(details['pipeline_id'])
-                    sched.delete()
-        create_schedules =  set(current_device_grp) - set(existing_device_grp)
-        for schedule in create_schedules:
-            pipeline_schedule_details=dict(
-                ref='main',
-                description="Pipeline Schedule for Device Group:"+str(schedule),
-                cron='0 1 * * *',
-                active='true'
-            )
-            sched = project.pipelineschedules.create(pipeline_schedule_details)
-            sch_var=dict(key='device_grp',value=schedule)
-            sched.variables.create(sch_var)
-            sched.take_ownership()
-            sched.save()
-        return 0,"All Pipeline Schedules are updated as per the current inventory"
+        pipline_sche = project.pipelineschedules.list()
+        if len(pipline_sche) <= 250:
+            for schedule in pipline_sche:
+                sch_details = project.pipelineschedules.get(schedule.id)
+                if sch_details.attributes['active'] == True:
+                    variables=sch_details.attributes['variables']
+                    for variable in variables:
+                        if variable['key'] == 'device_grp':
+                            existing_device_grp.append(variable['value'])
+                            cur_pipeline_details.append(dict(pipeline_id=schedule.id,device_grp=variable['value']))
+            delete_schedules=set(existing_device_grp)-set(current_device_grp)
+            for delete in delete_schedules:
+                for details in cur_pipeline_details:
+                    if delete in details['device_grp']:
+                        sched = project.pipelineschedules.get(details['pipeline_id'])
+                        sched.delete()
+            create_schedules =  set(current_device_grp) - set(existing_device_grp)
+            for schedule in create_schedules:
+                   cron_schedule=str(np.random.randint(0,60))+" "+str(hours[np.random.randint(3)])+" * * "+str(days[np.random.randint(1)])
+                   pipeline_schedule_details=dict(
+                            ref='main',
+                            description="Pipeline Schedule for Arista Device Group:"+str(schedule),
+                            cron=cron_schedule,
+                            active='true'
+                   )
+                   sched = project.pipelineschedules.create(pipeline_schedule_details)
+                   sch_var=dict(key='device_grp',value=schedule)
+                   sched.variables.create(sch_var)
+                   sched.take_ownership()
+                   sched.save()
+            return 0,"All Pipeline Schedules are updated as per the current inventory"
+        else:
+            print("error:" + "Unexpexted amount of pipeline schedules found.Hence exiting")
+            file = open("gitlab_error.log", "w")
+            file.write(str("Unexpexted amount of pipeline schedules found.Hence exiting"))
+            file.close()
+            return 1, "Unexpexted amount of pipeline schedules found.Hence exiting"
     except Exception as e:
         print("error:"+str(e))
         file=open("gitlab_error.log","w")
@@ -92,7 +105,7 @@ def dynamic_inv():
         module.exit_json(**result)
     elif int(status_code) == 2:
         result['changed'] = True
-        result['msg'] = "Error while cretaing/updating gitlab pipeline schedule."
+        result['msg'] = "Error while creating/updating gitlab pipeline schedule."
         module.fail_json(**result)
     else:
         result['changed'] = False
