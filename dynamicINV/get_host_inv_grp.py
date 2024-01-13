@@ -17,3 +17,26 @@ if __name__ == '__main__':
         result['msg'] = str(e)
         result['changed'] = False
         module.fail_json(**result)
+
+- name: Download the code from the inventory
+      uri:
+        url: "{{gitlab_url}}api/v4/projects/{{gitlab_projectid}}/packages/generic/AristaInventory/LATEST/inventory_new.ini"
+        method: GET
+        headers:
+          PRIVATE-TOKEN: 'glpat-hSdAURpV5FWwRq4dpjx9'
+        status_code: 200
+        return_content: true
+      register: data
+    - name: Write to the File
+      lineinfile:
+        path: "inventory_new.ini"
+        line: "{{ data.content }}"
+        state: present
+        create: true
+    - name: Get Inventory by Group
+      get_hosts_inv_grp:
+        inventory_filename: "inventory_new.ini"
+        device_grp: "{{device_grp}}"
+      register: result
+    - debug:
+        var: result
